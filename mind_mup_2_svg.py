@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import sys
 
 import pydot
 
@@ -13,25 +14,26 @@ def main(folder_path):
         folder_path (str): The path to the folder containing JSON files.
     """
     if not os.path.isdir(folder_path):
-        print(f"Error: The provided path '{folder_path}' is not a valid directory.")
+        logging.info(f"Error: The provided path '{folder_path}' is not a valid directory.")
         return
     
     # Process each file in the directory
     for file_name in os.listdir(folder_path):
         file_path = os.path.join(folder_path, file_name)
-        print(file_path)
+        logging.info(f"processing: {file_path}")
+
         try:
             with open(file_path, "r") as file_:
                 mindmup = json.load(file_)
         except json.JSONDecodeError:
-            print(f"could not decode {file_name}")
+            logging.info(f"could not decode {file_name}")
             continue
 
         try:
             graph = generate_graph(mindmup)
-            output_file_name = f"{os.path.splitext(file_name)[0]}_mermaid.md"
+            output_file_name = f"{os.path.splitext(file_name)[0]}_mermaid.svg"
             output_path = os.path.join(folder_path, output_file_name)
-            graph.write(output_path, format="svg")
+            graph.write_svg(output_path)
         except Exception:
             logging.exception(f"could not process {file_name}")
             continue
@@ -67,3 +69,9 @@ def generate_graph(mindmup):
             graph.add_edge(pydot.Edge(parent_id, children_id))
             stack.append(children_node)
     return graph
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        logging.info("Usage: python your_script_name.py <folder_path>")
+    else:
+        main(sys.argv[1])
